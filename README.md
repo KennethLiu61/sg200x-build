@@ -57,29 +57,42 @@
 - 在本地或虚拟机中安装 Ubuntu 系统，推荐 `Ubuntu 22.04 LTS`。
 - 安装串口工具：例如 `MobaXterm` 或 `Xshell` 等，可根据自身喜好选择。
 
-- 安装编译依赖:
-```
-sudo apt install pkg-config build-essential ninja-build automake autoconf libtool wget curl git gcc libssl-dev bc slib squashfs-tools android-sdk-libsparse-utils android-sdk-ext4-utils jq cmake python3-distutils tclsh scons parallel ssh-client tree python 3-dev python3-pip device-tree-compiler libssl-dev ssh cpio squashfs-tools fakeroot libncurses5 flex bison
-```
+- 确保虚拟机联网，安装编译依赖:
+  ```bash
+  sudo apt install pkg-config build-essential ninja-build automake autoconf libtool wget curl git gcc libssl-dev bc slib squashfs-tools android-sdk-libsparse-utils android-sdk-ext4-utils jq cmake python3-distutils tcl scons parallel openssh-client tree python3-dev python3-pip device-tree-compiler libssl-dev ssh cpio squashfs-tools fakeroot libncurses5 flex bison
+  ```
+- 若执行后出现报错`无法定位软件包 android-sdk-ext4-utils`，请参考[此页](https://community.milkv.io/t/e-unable-to-locate-package-android-sdk-ext4-utils-ubuntu22-04-2/245)单独安装该软件包，具体架构可`cat /proc/version`查看。
+
 - 注意：cmake 最低版本要求为 `3.16.5`，而在 `Ubuntu 20.04` 中使用 apt 安装的 cmake 版本号为 `3.16.3`，不满足 SDK 的最低版本要求，因此需要手动安装最新版本。
-```
-wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-x86_64.sh
-chmod +x cmake-3.27.6-linux-x86_64.sh
-sudo sh cmake-3.27.6-linux-x86_64.sh --skip-license --prefix=/usr/local/
-```
-- 手动安装的 cmake 在 `/usr/local/bin` 目录下，使用 `cmake --version` 命令可查看其版本号：
-```
-cmake version 3.27.6
-```
+  ```
+  wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-x86_64.sh
+  chmod +x cmake-3.27.6-linux-x86_64.sh
+  sudo sh cmake-3.27.6-linux-x86_64.sh --skip-license --prefix=/usr/local/
+  ```
+  手动安装的 cmake 在 `/usr/local/bin` 目录下，使用 `cmake --version` 命令可查看其版本号：
+  ```
+  cmake version 3.27.6
+  ```
 
 ## 获取SDK
+- 在clone仓库之前，请先参考[这里](https://docs.github.com/zh/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)配置好github SSH key。
+  或者，您可以使用HTTPS URL来克隆仓库，将`scritps/repo_clone.sh`脚本中SSH部分
+  ```bash
+  REMOTE_URL=$(grep -o '<remote.*/>' ${dir} | sed 's/.*fetch="\([^"]*\)".*/\1/' | sed "s/ssh:\/\/\(.*\)/ssh:\/\/$USERNAME@\1/")
+  ```
+  修改为
+  ```bash
+  REMOTE_URL=$(grep -o '<remote.*/>' ${dir} | sed 's/.*fetch="\([^"]*\)".*/\1/' | sed "s/git@\(.*\):/https:\/\/\1\//")`
+  ```
+  即可。
 - 本 SDK 仓库采用自动化脚本的方式管理子仓库，在拉取 SDK 时请使用如下的命令：
-```
+```bash
 git clone https://github.com/sophgo/sophpi.git -b sg200x-evb
 cd sophpi
 ./scripts/repo_clone.sh --gitclone scripts/subtree.xml
 ```
 - 若以上的方式拉取失败，或者您当前是在 build 项目中查看本文档，您可以单独拉取每个子仓库，详见 [#常见问题解答](#常见问题解答)
+
 ## 准备编译工具
 如果您在上一步中没有碰到任何问题，您可以跳过这一步。
 - 获取工具链
