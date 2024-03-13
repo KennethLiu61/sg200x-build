@@ -85,6 +85,7 @@
   REMOTE_URL=$(grep -o '<remote.*/>' ${dir} | sed 's/.*fetch="\([^"]*\)".*/\1/' | sed "s/git@\(.*\):/https:\/\/\1\//")`
   ```
   即可。
+- 设置git的全局postBuffer为一个足够大的值，`git config --global http.postBuffer 2147483648`，以免在拉取仓库时出现EOF错误。
 - 本 SDK 仓库采用自动化脚本的方式管理子仓库，在拉取 SDK 时请使用如下的命令：
 ```bash
 git clone https://github.com/sophgo/sophpi.git -b sg200x-evb
@@ -145,7 +146,7 @@ defconfig sg2000_duo_sd
 clean_all && build_all
 pack_burn_image
 ```
-- 编译成功后即可在 `install` 目录下看到生成的镜像
+- 编译成功后即可在 `install` 目录下看到生成的镜像。若编译出现问题，请检查是否有文件缺失，参考[#常见问题解决](#常见问题解决)重新拉取相应仓库，并重新按步骤编译。
 
 ## SD卡烧录
 ### 使用镜像
