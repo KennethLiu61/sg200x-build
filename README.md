@@ -93,18 +93,14 @@ cd sophpi
 ./scripts/repo_clone.sh --gitclone scripts/subtree.xml
 ```
 - 若以上的方式拉取失败，或者您当前是在 build 项目中查看本文档，您可以单独拉取每个子仓库，详见 [#常见问题解答](#常见问题解答)
+- 如果本地已经有host-tools仓库，可以把subtree.xml中的host-tools删掉，拉取速度快点。
 
 ## 准备编译工具
 如果您在上一步中没有碰到任何问题，您可以跳过这一步。
 - 获取工具链
+默认拉取subtree.xml就会拉取host-tools仓库
 ```
-wget https://sophon-file.sophon.cn/sophon-prod-s3/drive/23/03/07/16/host-tools.tar.gz
-```
-- 解压工具链并链接到 SDK 目录
-```
-tar xvf host-tools.tar.gz
-cd sophpi/
-ln -s ../host-tools ./
+git clone https://github.com/sophgo/host-tools.git
 ```
 
 ## 编译

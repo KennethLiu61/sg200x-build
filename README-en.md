@@ -84,13 +84,7 @@ cd sophpi
 If you did not encountered any issues in the previous step, you can just skip this step.
 - Get the cross-compilation toolchain
 ```
-wget https://sophon-file.sophon.cn/sophon-prod-s3/drive/23/03/07/16/host-tools.tar.gz
-```
-- Unpack the toolchain and link to the SDK directory
-```
-tar xvf host-tools.tar.gz
-cd sophpi/
-ln -s ../host-tools ./
+git clone https://github.com/sophgo/host-tools.git
 ```
 
 ## Compile
