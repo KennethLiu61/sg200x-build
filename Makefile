@@ -478,7 +478,7 @@ print-target-packages-include:
 	@echo $(foreach t,$(TARGET_PACKAGES),\
 		-I$(TOP_DIR)/ramdisk/rootfs/public/$(t)/include)
 
-rootfs-prepare:export CROSS_COMPILE_SDK=$(patsubst "%",%,$(CONFIG_CROSS_COMPILE_SDK))
+rootfs-%:export CROSS_COMPILE_SDK=$(patsubst "%",%,$(CONFIG_CROSS_COMPILE_SDK))
 rootfs-prepare:$(OUTPUT_DIR)/rootfs
 	# Copy rootfs
 	${Q}cp -a --remove-destination $(RAMDISK_PATH)/rootfs/$(ROOTFS_BASE)/* $(OUTPUT_DIR)/rootfs
@@ -535,7 +535,64 @@ define raw2cimg
 	${Q}python3 $(COMMON_TOOLS_PATH)/image_tool/raw2cimg.py $(OUTPUT_DIR)/rawimages/${1} $(OUTPUT_DIR) $(FLASH_PARTITION_XML)
 endef
 
-rootfs:rootfs-pack
+ifeq ($(SDK_VER),musl_riscv64)
+BR2_CONFIG_NAME := sophgo_musl_rv64_defconfig
+else
+BR2_CONFIG_NAME := sophgo_arm_defconfig
+endif
+
+BR2_OUTPUT_CONFIG_PATH := ${BUILDROOT_PATH}/.config
+BR2_DEFAULT_CONFIG_PATH := ${BUILD_PATH}/boards/default/buildroot/${BR2_CONFIG_NAME}
+
+${BR2_OUTPUT_CONFIG_PATH}: ${BR2_DEFAULT_CONFIG_PATH} ${BUILD_PATH}/.config
+	${Q}mkdir -p $(dir ${BR2_OUTPUT_CONFIG_PATH})
+	${Q}cmp -s ${BR2_DEFAULT_CONFIG_PATH} ${BR2_OUTPUT_CONFIG_PATH} || \
+		${Q}$(MAKE) -j${NPROC} -C ${BUILDROOT_PATH} distclean && \
+			${Q}cp -vb ${BR2_DEFAULT_CONFIG_PATH} ${BR2_OUTPUT_CONFIG_PATH}
+
+
+menuconfig-br2: ${BR2_OUTPUT_CONFIG_PATH}
+	${Q}$(MAKE) -C ${BUILDROOT_PATH} menuconfig
+	${Q}$(MAKE) -C ${BUILDROOT_PATH} savedefconfig
+
+$(ROOTFS_DIR)/mnt:
+	${Q}mkdir -p $@
+
+rootfs_prepare_br2:$(ROOTFS_DIR)/mnt
+	@bash -c '_prepare_buildroot_'
+	$(Q)rm -rf ${BR2_OVERLAY_PATH}
+	$(Q)mkdir -p ${BR2_OVERLAY_PATH}/etc
+	$(Q)mkdir -p ${BR2_OVERLAY_PATH}/sbin
+
+	# Copy chip overlay rootfs
+ifneq ("$(wildcard $(SDK_VER_FOLDER_PATH))", "")
+	${Q}rsync -av $(SDK_VER_FOLDER_PATH)/* ${BR2_OVERLAY_PATH} --exclude=issue --exclude=passwd --exclude=hostname --exclude=S23ntp --exclude=shadow
+endif
+
+	${Q}${BUILD_PATH}/boards/default/rootfs_script/prepare_rootfs.sh ${BR2_OVERLAY_PATH}
+	# Generate S10_automount
+	${Q}python3 $(COMMON_TOOLS_PATH)/image_tool/create_automount.py $(FLASH_PARTITION_XML) $(BR2_OVERLAY_PATH)/etc/init.d/
+	# Generate /etc/fw_env.config
+	${Q}python3 $(COMMON_TOOLS_PATH)/image_tool/mkcvipart.py $(FLASH_PARTITION_XML) $(BR2_OVERLAY_PATH)/etc/ --fw_env
+
+rootfs-br2-pack:rootfs_prepare_br2 ${BR2_OUTPUT_CONFIG_PATH}
+	$(call print_target)
+	# buildroot would do strip
+	${Q}find ${BR2_OVERLAY_PATH}/* -name "*.ko" -type f -printf 'striping %p\n' -exec $(CROSS_COMPILE_KERNEL)strip --strip-unneeded {} \;
+	${Q}find ${BR2_OVERLAY_PATH}/* -name "*.so*" -type f -printf 'striping %p\n' -exec $(CROSS_COMPILE_SDK)strip --strip-all {} \;
+	${Q}find ${BR2_OVERLAY_PATH}/* -executable -type f ! -name "*.sh" ! -path "*etc*" ! -path "*.ko" -printf 'striping %p\n' -exec $(CROSS_COMPILE_SDK)strip --strip-all {} 2>/dev/null \;
+	${Q}$(MAKE) -j${NPROC} -C ${BUILDROOT_PATH} olddefconfig
+	${Q}$(MAKE) -j${NPROC} -C ${BUILDROOT_PATH}
+	${Q}cp ${BUILDROOT_PATH}/output/images/rootfs.squashfs $(OUTPUT_DIR)/rawimages/rootfs.${STORAGE_TYPE}
+	${Q}cp -rf ${BUILDROOT_PATH}/output/target/* $(ROOTFS_DIR)/
+
+ifneq ($(CONFIG_ROOTFS_BUILD_FROM_BR2),y)
+ROOTFS_BUILD := rootfs-pack
+else
+ROOTFS_BUILD := rootfs-br2-pack
+endif
+
+rootfs: $(ROOTFS_BUILD)
 rootfs:
 	$(call print_target)
 ifneq ($(STORAGE_TYPE), sd)

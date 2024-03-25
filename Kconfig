@@ -471,6 +471,12 @@ endmenu
 
 menu "ROOTFS options"
 
+config ROOTFS_BUILD_FROM_BR2
+	bool "Enable rootfs build from buildroot"
+	default n
+	help
+	  Enable rootfs build from buildroot.
+
 config SKIP_RAMDISK
     bool "Skiping mounting initramfs"
     default n
