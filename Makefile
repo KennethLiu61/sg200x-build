@@ -366,8 +366,9 @@ ifneq ("$(wildcard $(CUST_FOLDER_PATH))", "")
 endif
 
 define gen_cpio
+	cd $(KERNEL_PATH)/usr/;make gen_init_cpio; \
 	cd $(RAMDISK_PATH)/$(RAMDISK_OUTPUT_FOLDER);\
-	$(COMMON_TOOLS_PATH)/gen_init_cpio $(RAMDISK_PATH)/$(RAMDISK_OUTPUT_FOLDER)/../configs/$(1) > $(RAMDISK_PATH)/$(RAMDISK_OUTPUT_FOLDER)/boot.cpio
+	$(KERNEL_PATH)/usr/gen_init_cpio $(RAMDISK_PATH)/$(RAMDISK_OUTPUT_FOLDER)/../configs/$(1) > $(RAMDISK_PATH)/$(RAMDISK_OUTPUT_FOLDER)/boot.cpio
 endef
 
 BOOT_IMAGE_ARG :=
@@ -382,6 +383,7 @@ BOOT_IMAGE_ARG += --gen-board-its ${CHIP_ARCH}
 endif
 
 boot: export KERNEL_COMPRESS=$(patsubst "%",%,$(CONFIG_KERNEL_COMPRESS))
+boot: export MKIMAGE_TOOL=${UBOOT_PATH}/build/${PROJECT_FULLNAME}/tools/mkimage
 boot: kernel-dts
 	$(call print_target)
 ifeq ($(CONFIG_ROOTFS_OVERLAYFS),y)
@@ -412,8 +414,14 @@ ifeq ($(CONFIG_KERNEL_ENTRY_HACK),y)
 	${Q}sed -i "s/load = <0x0 0x.*>;/load = <0x0 $(CONFIG_KERNEL_ENTRY_HACK_ADDR)>;/g" ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its
 	${Q}sed -i "s/entry = <0x0 0x.*>;/entry = <0x0 $(CONFIG_KERNEL_ENTRY_HACK_ADDR)>;/g" ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its
 endif
-	$(COMMON_TOOLS_PATH)/prebuild/mkimage -f ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its -k $(RAMDISK_PATH)/keys -r ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/boot.itb
+	@if [ -f ${MKIMAGE_TOOL} ];then \
+		${MKIMAGE_TOOL} -f ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its -k $(RAMDISK_PATH)/keys -r ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/boot.itb; \
+	else \
+		echo "Need to compile uboot first!!! please run 'build_uboot'!!!"; \
+		exit -1; \
+	fi
 
+ramboot: export MKIMAGE_TOOL=${UBOOT_PATH}/build/${PROJECT_FULLNAME}/tools/mkimage
 ramboot: kernel-dts
 	$(call print_target)
 	$(call gen_cpio,ramboot_fixed_files.txt)
@@ -429,7 +437,12 @@ ifeq ($(CONFIG_KERNEL_ENTRY_HACK),y)
 	${Q}sed -i "s/load = <0x0 0x.*>;/load = <0x0 $(CONFIG_KERNEL_ENTRY_HACK_ADDR)>;/g" ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its
 	${Q}sed -i "s/entry = <0x0 0x.*>;/entry = <0x0 $(CONFIG_KERNEL_ENTRY_HACK_ADDR)>;/g" ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its
 endif
-	$(COMMON_TOOLS_PATH)/prebuild/mkimage -f ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its -k $(RAMDISK_PATH)/keys -r $(OUTPUT_DIR)/ramboot.itb
+	@if [ -f ${MKIMAGE_TOOL} ];then \
+		${MKIMAGE_TOOL} -f ${RAMDISK_PATH}/${RAMDISK_OUTPUT_FOLDER}/multi.its -k $(RAMDISK_PATH)/keys -r $(OUTPUT_DIR)/ramboot.itb; \
+	else \
+		echo "Need to compile uboot first!!! please run 'build_uboot'!!!"; \
+		exit -1; \
+	fi
 
 kernel-clean:
 	$(call print_target)
