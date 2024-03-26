@@ -13,8 +13,6 @@
   - [准备编译工具](#准备编译工具)
   - [编译](#编译)
   - [SD卡烧录](#SD卡烧录)
-    - [使用镜像](#使用镜像)
-    - [使用upgrade zip](#使用upgrade-zip)
 - [常见问题解答](#常见问题解答)
   - [脚本拉取失败](#脚本拉取失败)
 - [相关项目](#相关项目)
@@ -145,42 +143,43 @@ pack_burn_image
 - 编译成功后即可在 `install` 目录下看到生成的镜像。若编译出现问题，请检查是否有文件缺失，参考[#常见问题解决](#常见问题解决)重新拉取相应仓库，并重新按步骤编译。
 
 ## SD卡烧录
-### 使用镜像
-> 注意：烧录过程中会清除 SD 卡中的全部内容，请务必提前做好备份！
-- 准备一张 SD 卡
-- 在 Windows 下，可以使用 `balenaEtcher`，`Rufus` 或 `Win32 Disk Imager` 等工具将生成的镜像写入 SD 卡中。
-- 在 Linux 下，可以使用 dd 命令将镜像写入 SD 卡中:
-```
-sudo dd if=sophpi-duo-XXX.img of=/dev/sdX
-```
-
-### 使用upgrade zip
-- 接好 EVB 板的串口线
-- 将 SD 卡格式化为 FAT32 格式
-- 将 `install` 目录下的 `upgrade.zip` 压缩包解压缩并放入 SD 卡根目录，取决于具体开发板型号，压缩包中的文件可能不同：
-```
-soc_cv1812h_wevb_0007a_emmc
-.
-├── boot.emmc
-├── cfg.emmc
-├── fip.bin
-├── META/
-├── partition_emmc.xml
-├── rootfs.emmc
-├── system.emmc
-└── utils/
-
-soc_cv1800b_sophpi_duo_sd
-.
-├── boot.sd
-├── META/
-├── partition_sd.xml
-├── rootfs.sd
-└── utils/
-```
-- 将 SD 卡插入卡槽中
-- 给开发板上电，开机就会自动进入烧录。
-- 等待烧录成功后，拔掉 SD 卡，重新给开发板上电，即可进入系统。
+准备一张 SD 卡。烧录过程中会清除 SD 卡中的全部内容，请务必提前做好备份！
+### 1. SD卡内容准备
+- 方式1: 使用镜像文件
+  
+  - 在 Windows 下，可以使用`balenaEtcher`，`Rufus` 或 `Win32 Disk Imager` 等工具将生成的镜像写入 SD 卡中。
+  - 在 Linux 下，可以使用`dd`命令将镜像写入 SD 卡中:
+  ```
+  sudo dd if=sophpi-duo-XXX.img of=[SD卡挂载目录，如/dev/disk3]
+  ```
+  
+- 方式2: 使用`upgrade.zip`
+  
+  - 将 SD 卡格式化为 FAT32 格式
+  - 将 `install` 目录下的 `upgrade.zip` 压缩包解压缩并放入 SD 卡根目录，取决于具体开发板型号，压缩包中的文件可能不同：
+    ```
+    soc_cv1812h_wevb_0007a_emmc
+    .
+    ├── boot.emmc
+    ├── cfg.emmc
+    ├── fip.bin
+    ├── META/
+    ├── partition_emmc.xml
+    ├── rootfs.emmc
+    ├── system.emmc
+    └── utils/
+    
+    soc_cv1800b_sophpi_duo_sd
+    .
+    ├── boot.sd
+    ├── META/
+    ├── partition_sd.xml
+    ├── rootfs.sd
+    └── utils/
+    ```
+### 2. 将 SD 卡插入卡槽中，接好 EVB 板的串口线；
+### 3. 给开发板上电，开机就会自动进入烧录;
+### 4. 等待烧录成功，即可进入系统。
 
 # 常见问题解答
 ## 脚本拉取失败
